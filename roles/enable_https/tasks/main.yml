@@ -1,0 +1,130 @@
+---
+- name: "1. create letsencrypt directory"
+  file:
+    path: /etc/letsencrypt
+    state: directory
+    owner: root
+    group: root
+    mode: u=rwx,g=x,o=x
+- name: "2. Create relevant directories in /etc/letsencrypt"
+  file:
+    path: /etc/letsencrypt/{{ item }}
+    state: directory
+    owner: root
+    group: root
+    mode: u=rwx,g=x,o=x
+  with_items:
+  - account
+  - certs
+  - csrs
+  - keys
+- name: "3. Generate Let's Encrypt account key"
+  shell: "if [ ! -f {{ letsencrypt_account_key }} ]; then openssl genrsa 4096 | sudo tee {{ letsencrypt_account_key }}; fi"
+- name: "4. Generate Let's Encrypt private key"
+  shell: "if [ ! -f /etc/letsencrypt/keys/{{ domain_name }}.key ]; then openssl genrsa 4096 | sudo tee /etc/letsencrypt/keys/{{ domain_name }}.key; fi"
+  args:
+    executable: /bin/bash
+- name: "5. Generate Let's Encrypt certificate signing request"
+  shell: "openssl req -new -sha256 -key /etc/letsencrypt/keys/{{ domain_name }}.key -subj \"/CN={{ domain_name }}\" | sudo tee /etc/letsencrypt/csrs/{{ domain_name }}.csr"
+  args:
+    executable: /bin/bash
+- name: "6. Begin Let's Encrypt challenges"
+  acme_certificate:
+    acme_directory: "{{ acme_directory }}"
+    acme_version: "{{ acme_version }}"
+    account_key_src: "{{ letsencrypt_account_key }}"
+    account_email: "{{ acme_email }}"
+    terms_agreed: 1
+    challenge: "{{ acme_challenge_type }}"
+    csr: "{{ letsencrypt_csrs_dir }}/{{ domain_name }}.csr"
+    fullchain_dest: "{{ letsencrypt_certs_dir }}/fullchain_{{ domain_name }}.crt"
+    remaining_days: 7
+  register: acme_challenge
+- name: "get content of acme_challenge"
+  debug:
+    var: acme_challenge
+- name: "7. Implement http-01 challenge files"
+  copy:
+    content: "{{ acme_challenge['challenge_data'][item]['http-01']['resource_value'] }}"
+    dest: "/var/www/trastr/current/trastr_package/static/{{ acme_challenge['challenge_data'][item]['http-01']['resource'] }}"
+    owner: root
+    group: root
+    mode: "0644"
+  when: acme_challenge['changed'] == true
+  with_items:
+    - "{{ domain_name }}"
+- name: "7.5. restart apache"
+  service:
+    name: apache2
+    state: restarted
+- name: "8. Complete challenges"
+  acme_certificate:
+    acme_directory: "{{ acme_directory }}"
+    acme_version: "{{ acme_version }}"
+    account_key_src: "{{ letsencrypt_account_key }}"
+    account_email: "{{ acme_email }}"
+    challenge: "{{ acme_challenge_type }}"
+    csr: "{{ letsencrypt_csrs_dir }}/{{ domain_name }}.csr"
+    fullchain_dest: "{{ letsencrypt_certs_dir }}/fullchain_{{ domain_name }}.crt"
+    data: "{{ acme_challenge }}"
+- name: "9. duplicate port 80 vhost file"
+  copy:
+    src: "/etc/apache2/sites-available/trastr.conf"
+    dest: "/etc/apache2/sites-available/trastr-secure.conf"
+    remote_src: yes
+- name: "10. insert ifmodule opening tag"
+  lineinfile:
+    path: "/etc/apache2/sites-available/trastr-secure.conf"
+    line: "<IfModule mod_ssl.c>"
+    state: present
+    insertbefore: "^<Virtualhost"
+- name: "11. insert ifmodule closing tag"
+  lineinfile:
+    path: "/etc/apache2/sites-available/trastr-secure.conf"
+    line: "</IfModule>"
+    state: present
+    insertafter: "^</Virtualhost"
+- name: "12. insert key paths"
+  lineinfile:
+    path: "/etc/apache2/sites-available/trastr-secure.conf"
+    line: "SSLCertificateFile {{ letsencrypt_certs_dir }}/fullchain_{{ domain_name }}.crt"
+    state: present
+    insertbefore: "^</Virtualhost"
+- name: "13. insert privkey path"
+  lineinfile:
+    path: "/etc/apache2/sites-available/trastr-secure.conf"
+    line: "SSLCertificateKeyFile /etc/letsencrypt/keys/{{ domain_name }}.key"
+    state: present
+    insertbefore: "^</Virtualhost"
+- name: "14. change vhost section to apply to port 443"
+  replace:
+    path: "/etc/apache2/sites-available/trastr-secure.conf"
+    regexp: "80>"
+    replace: "443>"
+- name: "15. rename WSGIDaemonProcess for secure vhost file so there is not a duplicate process in the system"
+  replace:
+    path: "/etc/apache2/sites-available/trastr-secure.conf"
+    regexp: "WSGIDaemonProcess trastr"
+    replace: "WSGIDaemonProcess trastr-secure"
+- name: "16. enable apache ssl module"
+  apache2_module:
+    state: present
+    name: ssl
+- name: "17. set up apache rewrite feature for permanent redirect to HTTPS"
+  blockinfile:
+    path: "/etc/apache2/sites-available/trastr.conf"
+    block: |
+      RewriteEngine On
+      RewriteCond %{HTTPS} !=on
+      RewriteRule ^ https://%{SERVER_NAME}%{REQUEST_URI} [R=301,NE,L]
+    insertbefore: "^</Virtualhost"
+- name: "18. enable apache rewrite module"
+  apache2_module:
+    state: present
+    name: rewrite
+- name: "19. enable secure site in apache"
+  command: "a2ensite trastr-secure"
+- name: "20. restart apache"
+  service:
+    name: apache2
+    state: restarted

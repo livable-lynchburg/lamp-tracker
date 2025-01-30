@@ -1,0 +1,29 @@
+---
+- name: Ensure the PostgreSQL service is running
+  service: name=postgresql state=started enabled=yes
+- name: Create database for trastr
+  become: true
+  become_user: postgres
+  postgresql_db:
+    name: trastr_db
+  vars:
+    ansible_ssh_pipelining: true
+- name: Create trastr user for database
+  become: true
+  become_user: postgres
+  postgresql_user:
+    db: trastr_db
+    name: trastr
+    password: "{{ db_password }}"
+    encrypted: true
+  vars:
+    ansible_ssh_pipelining: true
+- name: Enable PostGIS extension
+  become: true
+  become_user: postgres
+  postgresql_ext:
+    name: postgis
+    db: trastr_db
+    state: present
+  vars:
+    ansible_ssh_pipelining: true

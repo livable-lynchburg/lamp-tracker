@@ -1,0 +1,20 @@
+---
+- name: Create custom document root
+  file: path={{ apache_doc_root }} state=directory owner=www-data group=www-data
+- name: Initialize deploy root and gather facts
+  deploy_helper:
+    path: "{{ apache_doc_root }}"
+- name: Upload  files
+  copy: src=trastr_entry/ dest={{ deploy_helper.new_release_path }}
+- name: Add an unfinished file, to allow cleanup on successful finalize
+  file:
+    path: '{{ deploy_helper.new_release_path }}/{{ deploy_helper.unfinished_filename }}'
+    state: touch
+- name: Finalize the deploy, removing the unfinished file and switching the symlink
+  deploy_helper:
+    path: "{{ apache_doc_root }}"
+    release: '{{ deploy_helper.new_release }}'
+    state: finalize
+- name: upload config.py file
+  template: src=trastr_entry/config.py.tmpl dest={{ deploy_helper.new_release_path }}/config.py
+  notify: restart apache

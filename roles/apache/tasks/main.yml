@@ -1,0 +1,17 @@
+---
+- name: copy apache conf file
+  template: src=config/trastr.conf dest=/etc/apache2/sites-available/trastr.conf
+- name: a2enmod rewrite
+  command: a2enmod rewrite
+  notify: restart apache
+- name: a2ensite trastr
+  command: a2ensite trastr
+  notify: restart apache
+- name: check that 000-default site exists
+  stat:
+    path: /etc/apache2/sites-available/000-default.conf
+  register: stat_result
+- name: a2dissite 000-default
+  command: a2dissite 000-default
+  when: stat_result.stat.exists
+  notify: restart apache
