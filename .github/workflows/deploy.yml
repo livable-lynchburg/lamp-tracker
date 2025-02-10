@@ -2,19 +2,14 @@
 # For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-python
 
 name: Deploy to Digital Ocean
-
 on:
   push:
     branches: [ "main" ]
-
 permissions:
   contents: read
-
 jobs:
   build:
-
-    runs-on: bookworm
-
+    runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
     - name: Install dependencies
