@@ -16,9 +16,14 @@ jobs:
       run: |
         sudo apt update
         sudo apt upgrade --yes
-        sudo apt install \
+        sudo apt install --yes \
         ansible \
-        rsync
-    - name: Script step so I remember how this works
+        rsync \
+		openssh-client
+    - name: Run Ansible playbook
       run: |
-        echo "Toot"
+		- eval $(ssh-agent -s)
+		- echo $${SSH_PRIVATE_KEY} | tr '*' "\\\n" | ssh-add -
+		- echo "configuring"
+		- export ANSIBLE_HOST_KEY_CHECKING=False
+		- ansible-playbook -i hosts playbook.yml -e "variable_host='example_server' secret_key=$${SECRET_KEY} db_password=$${DB_PASSWORD} certbot_admin_email=$${CERTBOT_ADMIN_EMAIL}" -vv
