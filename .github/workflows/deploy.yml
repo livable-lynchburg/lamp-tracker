@@ -16,10 +16,7 @@ jobs:
       run: |
         sudo apt update
         sudo apt upgrade --yes
-        sudo apt install --yes \
-        ansible \
-        rsync \
-		openssh-client
+        sudo apt install --yes ansible rsync openssh-client
     - name: Run Ansible playbook
       run: |
 		eval $(ssh-agent -s)
