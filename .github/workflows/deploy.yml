@@ -19,7 +19,7 @@ jobs:
         sudo apt install --yes ansible rsync openssh-client
     - name: Run Ansible playbook
       run: |
-        eval $(ssh-agent -s)
+        ssh-agent -s
         echo ${FAKE_KEY}
         echo ${SSH_PRIVATE_KEY} | tr '*' "\\\n" | ssh-add -
         export ANSIBLE_HOST_KEY_CHECKING=False
