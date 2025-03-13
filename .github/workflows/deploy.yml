@@ -20,7 +20,7 @@ jobs:
     - name: Random test
       run: |
         echo "I am working"
-        echo ${FAKE_KEY}
+        echo ${secrets.FAKE_KEY}
     - name: Run Ansible playbook
       run: |
         ssh-agent -s
