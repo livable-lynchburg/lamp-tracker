@@ -1,6 +1,6 @@
 ---
 all:
   children:
-    example_server:
+    _server:
       hosts:
-        1.2.3.4:
+        staging_server:

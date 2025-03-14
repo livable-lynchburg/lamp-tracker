@@ -1,0 +1,2 @@
+vars:
+  staging_server: "{{ lookup('env','STAGING_SERVER') }}"
