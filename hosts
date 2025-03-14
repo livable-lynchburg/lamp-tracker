@@ -1,6 +1,6 @@
 ---
 all:
   children:
-    _server:
+    staging_server:
       hosts:
-        staging_server:
+        "{{staging_server}}":
