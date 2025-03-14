@@ -19,7 +19,7 @@ jobs:
         sudo apt install --yes ansible rsync openssh-client
     - name: Run Ansible playbook
       run: |
-        ssh-agent -s
+        eval `ssh-agent -s`
         echo ${{ secrets.SSH_PRIVATE_KEY }} | tr '*' "\\\n" | ssh-add -
         export ANSIBLE_HOST_KEY_CHECKING=False
         ansible-playbook -i hosts playbook.yml -e "variable_host='example_server' secret_key=${SECRET_KEY} db_password=${DB_PASSWORD} certbot_admin_email=${CERTBOT_ADMIN_EMAIL}" -vv
