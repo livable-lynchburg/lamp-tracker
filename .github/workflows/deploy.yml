@@ -20,7 +20,7 @@ jobs:
     - name: Run Ansible playbook
       run: |
         eval `ssh-agent -s`
-        echo ${{ secrets.FAKE_KEY }} | tr '*' "\\\n" 
-        echo ${{ secrets.SSH_PRIVATE_KEY }} | tr '*' "\\\n" | ssh-add -
+        echo ${{ secrets.FAKE_KEY }} | tr '*' "\\n" 
+        echo ${{ secrets.SSH_PRIVATE_KEY }} | tr '*' "\\n" | ssh-add -
         export ANSIBLE_HOST_KEY_CHECKING=False
         ansible-playbook -i hosts playbook.yml -e "variable_host='example_server' secret_key=${SECRET_KEY} db_password=${DB_PASSWORD} certbot_admin_email=${CERTBOT_ADMIN_EMAIL}" -vv
