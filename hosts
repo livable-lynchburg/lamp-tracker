@@ -4,3 +4,4 @@ all:
     staging_server:
       hosts:
         "{{staging_server}}":
+          ansible_user: root
