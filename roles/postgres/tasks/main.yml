@@ -1,19 +1,19 @@
 ---
 - name: Ensure the PostgreSQL service is running
   service: name=postgresql state=started enabled=yes
-- name: Create database for trastr
+- name: Create database for lamp tracker
   become: true
   become_user: postgres
   postgresql_db:
-    name: trastr_db
+    name: lamp_tracker_db
   vars:
     ansible_ssh_pipelining: true
-- name: Create trastr user for database
+- name: Create lamp tracker user for database
   become: true
   become_user: postgres
   postgresql_user:
-    db: trastr_db
-    name: trastr
+    db: lamp_tracker_db
+    name: lamp_tracker
     password: "{{ db_password }}"
     encrypted: true
   vars:
@@ -23,7 +23,7 @@
   become_user: postgres
   postgresql_ext:
     name: postgis
-    db: trastr_db
+    db: lamp_tracker_db
     state: present
   vars:
     ansible_ssh_pipelining: true

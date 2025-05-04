@@ -1,11 +1,11 @@
 ---
 - name: copy apache conf file
-  template: src=config/trastr.conf dest=/etc/apache2/sites-available/trastr.conf
+  template: src=config/lamp_tracker.conf dest=/etc/apache2/sites-available/lamp_tracker.conf
 - name: a2enmod rewrite
   command: a2enmod rewrite
   notify: restart apache
-- name: a2ensite trastr
-  command: a2ensite trastr
+- name: a2ensite lamp_tracker
+  command: a2ensite lamp_tracker
   notify: restart apache
 - name: check that 000-default site exists
   stat:

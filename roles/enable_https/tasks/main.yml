@@ -46,7 +46,7 @@
 - name: "7. Implement http-01 challenge files"
   copy:
     content: "{{ acme_challenge['challenge_data'][item]['http-01']['resource_value'] }}"
-    dest: "/var/www/trastr/current/trastr_package/static/{{ acme_challenge['challenge_data'][item]['http-01']['resource'] }}"
+    dest: "/var/www/lamp_tracker/current/lamp_tracker_package/static/{{ acme_challenge['challenge_data'][item]['http-01']['resource'] }}"
     owner: root
     group: root
     mode: "0644"
@@ -69,50 +69,50 @@
     data: "{{ acme_challenge }}"
 - name: "9. duplicate port 80 vhost file"
   copy:
-    src: "/etc/apache2/sites-available/trastr.conf"
-    dest: "/etc/apache2/sites-available/trastr-secure.conf"
+    src: "/etc/apache2/sites-available/lamp_tracker.conf"
+    dest: "/etc/apache2/sites-available/lamp_tracker-secure.conf"
     remote_src: yes
 - name: "10. insert ifmodule opening tag"
   lineinfile:
-    path: "/etc/apache2/sites-available/trastr-secure.conf"
+    path: "/etc/apache2/sites-available/lamp_tracker-secure.conf"
     line: "<IfModule mod_ssl.c>"
     state: present
     insertbefore: "^<Virtualhost"
 - name: "11. insert ifmodule closing tag"
   lineinfile:
-    path: "/etc/apache2/sites-available/trastr-secure.conf"
+    path: "/etc/apache2/sites-available/lamp_tracker-secure.conf"
     line: "</IfModule>"
     state: present
     insertafter: "^</Virtualhost"
 - name: "12. insert key paths"
   lineinfile:
-    path: "/etc/apache2/sites-available/trastr-secure.conf"
+    path: "/etc/apache2/sites-available/lamp_tracker-secure.conf"
     line: "SSLCertificateFile {{ letsencrypt_certs_dir }}/fullchain_{{ domain_name }}.crt"
     state: present
     insertbefore: "^</Virtualhost"
 - name: "13. insert privkey path"
   lineinfile:
-    path: "/etc/apache2/sites-available/trastr-secure.conf"
+    path: "/etc/apache2/sites-available/lamp_tracker-secure.conf"
     line: "SSLCertificateKeyFile /etc/letsencrypt/keys/{{ domain_name }}.key"
     state: present
     insertbefore: "^</Virtualhost"
 - name: "14. change vhost section to apply to port 443"
   replace:
-    path: "/etc/apache2/sites-available/trastr-secure.conf"
+    path: "/etc/apache2/sites-available/lamp_tracker-secure.conf"
     regexp: "80>"
     replace: "443>"
 - name: "15. rename WSGIDaemonProcess for secure vhost file so there is not a duplicate process in the system"
   replace:
-    path: "/etc/apache2/sites-available/trastr-secure.conf"
-    regexp: "WSGIDaemonProcess trastr"
-    replace: "WSGIDaemonProcess trastr-secure"
+    path: "/etc/apache2/sites-available/lamp_tracker-secure.conf"
+    regexp: "WSGIDaemonProcess lamp_tracker"
+    replace: "WSGIDaemonProcess lamp_tracker-secure"
 - name: "16. enable apache ssl module"
   apache2_module:
     state: present
     name: ssl
 - name: "17. set up apache rewrite feature for permanent redirect to HTTPS"
   blockinfile:
-    path: "/etc/apache2/sites-available/trastr.conf"
+    path: "/etc/apache2/sites-available/lamp_tracker.conf"
     block: |
       RewriteEngine On
       RewriteCond %{HTTPS} !=on
@@ -123,7 +123,7 @@
     state: present
     name: rewrite
 - name: "19. enable secure site in apache"
-  command: "a2ensite trastr-secure"
+  command: "a2ensite lamp_tracker-secure"
 - name: "20. restart apache"
   service:
     name: apache2
