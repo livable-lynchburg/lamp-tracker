@@ -15,9 +15,9 @@ apt_packages:
 - python3-flaskext.wtf
 - python3-flask-mail
 - python3-psycopg2
-- postgresql
-- postgresql-13-postgis-3
-- postgresql-13-postgis-3-scripts
+- postgresql-16
+- postgresql-16-postgis-3
+- postgresql-16-postgis-3-scripts
 - python3-geopy
 - python3-geoalchemy2
 - python3-shapely
