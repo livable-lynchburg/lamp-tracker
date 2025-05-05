@@ -1,0 +1,23 @@
+class Config(object):
+    DEBUG = False
+    TESTING = False
+    FLASK_APP="run.py"
+    SQLALCHEMY_TRACK_MODIFICATIONS = True
+    POSTGRES_DB = "lamp_tracker_db"
+    POSTGRES_URL = "localhost"
+    POSTGRES_USER = "lamp_tracker"
+    BCRYPT_HANDLE_LONG_PASSWORDS = True
+    DEFAULT_LOCATION_EWKT = "SRID=4326;POINT(37.4011 -79.2379)"
+
+    #Variable definitions passed from GitLab through Ansible args in .gitlab-ci.yml go after this line
+    SECRET_KEY = "{{ secret_key }}"
+    MAPBOX_API_KEY = "{{ mapbox_api_key }}"
+    POSTGRES_PW = "{{ db_password }}"
+    SQLALCHEMY_DATABASE_URI = 'postgresql+psycopg2://{user}:{pw}@{url}/{db}'.format(user=POSTGRES_USER,pw=POSTGRES_PW,url=POSTGRES_URL,db=POSTGRES_DB)
+    MAIL_SERVER = "{{ mail_server }}"
+    MAIL_PORT = "{{ mail_port }}"
+    #MAIL_USE_TLS = "{{ mail_use_tls }}"
+    MAIL_USE_SSL = "{{ mail_use_ssl }}"
+    MAIL_USERNAME = "{{ mail_username }}"
+    MAIL_PASSWORD = "{{ mail_password }}"
+    NOREPLY_SENDER = "{{ noreply_sender }}"
