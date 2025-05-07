@@ -1,7 +1,6 @@
 ---
 staging_server: "{{ lookup('env','STAGING_SERVER') }}"
 
-ansible_ssh_user: gitlab
 ansible_python_interpreter: /usr/bin/python3
 http_port: 80
 
