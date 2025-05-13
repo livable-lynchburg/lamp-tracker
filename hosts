@@ -3,5 +3,5 @@ all:
   children:
     staging_server:
       hosts:
-        "{{ ip_address }}":
+        "{{ lookup('env','IP_ADDRESS') }}":
           ansible_user: root

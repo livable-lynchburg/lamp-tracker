@@ -1,5 +1,4 @@
 ---
-ip_address: "{{ lookup('env','IP_ADDRESS') }}"
 secret_key: "{{ lookup('env','SECRET_KEY') }}"
 db_password: "{{ lookup('env','DB_PASSWORD') }}"
 
