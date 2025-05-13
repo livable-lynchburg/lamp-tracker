@@ -9,9 +9,7 @@ domain_name: "{{ lookup('env','DOMAIN_NAME') }}"
 acme_challenge_type: http-01
 acme_directory: https://acme-v02.api.letsencrypt.org/directory
 acme_version: 2
-# Why is acme_email here?
-acme_email: certificate-reminders@nathanwyand.com
-certbot_admin_email: "{{ lookup('env','CERTBOT_ADMIN_EMAIL')}}"
+acme_email: "{{ lookup('env','ACME_EMAIL') }}"
 letsencrypt_dir: /etc/letsencrypt
 letsencrypt_keys_dir: /etc/letsencrypt/keys
 letsencrypt_csrs_dir: /etc/letsencrypt/csrs
