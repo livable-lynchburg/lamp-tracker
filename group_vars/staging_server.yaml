@@ -1,13 +1,18 @@
 ---
-staging_server: "{{ lookup('env','STAGING_SERVER') }}"
+ip_address: "{{ lookup('env','IP_ADDRESS') }}"
+secret_key: "{{ lookup('env','SECRET_KEY') }}"
+db_password: "{{ lookup('env','DB_PASSWORD') }}"
 
 ansible_python_interpreter: /usr/bin/python3
 http_port: 80
 
+domain_name: "{{ lookup('env','DOMAIN_NAME') }}"
 acme_challenge_type: http-01
 acme_directory: https://acme-v02.api.letsencrypt.org/directory
 acme_version: 2
+# Why is acme_email here?
 acme_email: certificate-reminders@nathanwyand.com
+certbot_admin_email: "{{ lookup('env','CERTBOT_ADMIN_EMAIL')}}"
 letsencrypt_dir: /etc/letsencrypt
 letsencrypt_keys_dir: /etc/letsencrypt/keys
 letsencrypt_csrs_dir: /etc/letsencrypt/csrs
