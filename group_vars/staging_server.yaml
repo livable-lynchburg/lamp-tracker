@@ -5,7 +5,7 @@ db_password: "{{ lookup('env','DB_PASSWORD') }}"
 ansible_python_interpreter: /usr/bin/python3
 http_port: 80
 
-domain_name: "{{ lookup('env','DOMAIN_NAME') }}"
+domain_name: lamps.livablelynchburg.org #"{{ lookup('env','DOMAIN_NAME') }}"
 acme_challenge_type: http-01
 acme_directory: https://acme-v02.api.letsencrypt.org/directory
 acme_version: 2
