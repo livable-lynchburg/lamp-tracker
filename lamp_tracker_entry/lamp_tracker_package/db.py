@@ -1,4 +1,4 @@
-from lamp-tracker_package import app, login_manager
+from lamp_tracker_package import app, login_manager
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin
 from flask_bcrypt import Bcrypt
