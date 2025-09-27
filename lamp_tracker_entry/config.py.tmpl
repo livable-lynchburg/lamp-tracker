@@ -11,4 +11,4 @@ class Config(object):
     #Variable definitions passed from CI through Ansible args go after this line
     SECRET_KEY = "{{ secret_key }}"
     POSTGRES_PW = "{{ db_password }}"
-    SQLALCHEMY_DATABASE_URI = 'postgresql+psycopg2://{user}:{pw}@{url}/{db}'.format(user=POSTGRES_USER,pw=POSTGRES_PW,url=POSTGRES_URL,db=POSTGRES_DB)
+    SQLALCHEMY_DATABASE_URI = 'postgresql+psycopg://{user}:{pw}@{url}/{db}'.format(user=POSTGRES_USER,pw=POSTGRES_PW,url=POSTGRES_URL,db=POSTGRES_DB)

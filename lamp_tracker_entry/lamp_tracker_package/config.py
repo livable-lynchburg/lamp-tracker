@@ -12,4 +12,4 @@ class Config(object):
     SECRET_KEY = "top-secret"
     MAPBOX_API_KEY = "so so secret"
     POSTGRES_PW = "password"
-    SQLALCHEMY_DATABASE_URI = 'postgresql+psycopg2://{user}:{pw}@{url}/{db}'.format(user=POSTGRES_USER,pw=POSTGRES_PW,url=POSTGRES_URL,db=POSTGRES_DB)
+    SQLALCHEMY_DATABASE_URI = 'postgresql+psycopg://{user}:{pw}@{url}/{db}'.format(user=POSTGRES_USER,pw=POSTGRES_PW,url=POSTGRES_URL,db=POSTGRES_DB)
