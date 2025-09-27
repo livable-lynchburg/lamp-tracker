@@ -30,10 +30,10 @@ def root():
     else:
         return redirect(url_for("find_lamp"))
 
-@app.route("setup")
+@app.route("/setup")
 def setup():
     return "This is the setup page"
 
-@app.route("find_lamp")
+@app.route("/find_lamp")
 def find_lamp():
     return "This is the page where you find a lamp"
