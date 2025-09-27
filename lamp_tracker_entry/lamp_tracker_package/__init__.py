@@ -14,4 +14,4 @@ from lamp_tracker_package import views
 # importing app configuration from Python object
 app.config.from_object("config.Config")
 
-# TODO move bcrypt and db instantiations here
+# TODO move db instantiation here

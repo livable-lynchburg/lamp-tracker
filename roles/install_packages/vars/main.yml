@@ -10,7 +10,6 @@ apt_packages:
 - python3-pint
 - python3-flask-login
 - python3-flask-sqlalchemy
-- python3-flask-bcrypt
 - python3-flask-migrate
 - python3-flaskext.wtf
 - python3-flask-mail

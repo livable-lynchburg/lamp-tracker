@@ -1,7 +1,6 @@
 from lamp_tracker_package import app, login_manager
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin
-from flask_bcrypt import Bcrypt
 from geoalchemy2.types import Geography
 from sqlalchemy import inspect, event, text
 from sqlalchemy.sql.expression import and_
@@ -9,7 +8,6 @@ from datetime import datetime
 from flask_migrate import Migrate
 
 db = SQLAlchemy(app)
-bcrypt = Bcrypt(app)
 migrate = Migrate(app, db)
 
 def database_is_empty():
@@ -29,9 +27,6 @@ class User(db.Model, UserMixin):
     name = db.Column(db.Unicode)
     email = db.Column(db.Unicode(200), nullable=False)
     role = db.Column(db.Unicode(200), nullable=False)
-    
-
-    
 
 class Outage(db.Model):
     lamp_id = db.Column(db.BigInteger, db.ForeignKey("lamp.id"), primary_key=True)
@@ -58,5 +53,3 @@ class Lamp(db.Model):
     addr_city = db.Column(db.Unicode)
     addr_state = db.Column(db.Unicode)
     addr_postcode = db.Column(db.Unicode)
-
-
