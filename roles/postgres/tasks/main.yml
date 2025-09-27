@@ -12,7 +12,7 @@
   become: true
   become_user: postgres
   postgresql_user:
-    db: lamp_tracker_db
+    login_db: lamp_tracker_db
     name: lamp_tracker
     password: "{{ db_password }}"
     encrypted: true

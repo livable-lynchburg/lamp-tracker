@@ -48,7 +48,7 @@
 - name: "7. Implement http-01 challenge files"
   copy:
     content: "{{ acme_challenge['challenge_data'][item]['http-01']['resource_value'] }}"
-    dest: "/var/www/lamp_tracker/current/lamp_tracker_package/static/{{ acme_challenge['challenge_data'][item]['http-01']['resource'] }}"
+    dest: "{{ apache_doc_root }}/current/lamp_tracker_package/static/{{ acme_challenge['challenge_data'][item]['http-01']['resource'] }}"
     owner: root
     group: root
     mode: "0644"
