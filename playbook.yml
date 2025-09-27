@@ -5,26 +5,10 @@
   pre_tasks:
     - debug: 
         var: ansible_facts
-    - name: set variables for local testing
-      include_vars:
-        file: vagrant_ansible_vars.yml
-      when: ansible_facts['fqdn']|lower == 'bullseye' or ansible_facts['fqdn']|lower == 'localhost'
-    - name: check for internet connectivity
-      uri:
-        url: http://1.1.1.1
-        timeout: 5
-        validate_certs: no
-      ignore_errors: yes
-      register: internet_connection
 
   roles:
-    - common
-    - role: install_packages
-      when: internet_connection['failed'] == false
+    - install_packages
     - copy_files
     - apache
     - postgres
-    - role: enable_https
-      when:
-        - ansible_facts['fqdn']|lower != 'bullseye'
-        - ansible_facts['fqdn']|lower != 'localhost'
+    - enable_https
