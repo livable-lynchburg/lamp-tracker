@@ -7,6 +7,7 @@
         var: ansible_facts
 
   roles:
+    - common
     - install_packages
     - copy_files
     - apache
