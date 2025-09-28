@@ -11,7 +11,7 @@ db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 
 def database_is_empty():
-    engine = db.get_engine(app)
+    engine = db.engines[None]
     table_names = inspect(engine).get_table_names()
     is_empty = table_names == []
     return is_empty
