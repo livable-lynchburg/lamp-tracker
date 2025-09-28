@@ -2,6 +2,8 @@ from lamp_tracker_package import app
 
 # TODO: import db from __Init__ instead
 from lamp_tracker_package.db import (
+    db,
+    database_is_empty,
     User,
     Lamp,
     Outage
