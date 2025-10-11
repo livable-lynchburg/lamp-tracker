@@ -2,12 +2,21 @@ from lamp_tracker_package import app, login_manager
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin
 from geoalchemy2.types import Geography
-from sqlalchemy import inspect, event, text
+from sqlalchemy import inspect, event, text, Integer, BigInteger, String, Unicode
 from sqlalchemy.sql.expression import and_
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 from datetime import datetime
 from flask_migrate import Migrate
 
-db = SQLAlchemy(app)
+class Base(DeclarativeBase):
+      pass
+
+db = SQLAlchemy(app, model_class=Base)
+
+# might not work
+with app.app_context():
+    db.create_all()
+
 migrate = Migrate(app, db)
 
 def database_is_empty():
@@ -22,11 +31,11 @@ def load_user(user_id):
     return User.query.get(int(user_id))
 
 class User(db.Model, UserMixin):
-    id = db.Column(db.BigInteger, primary_key=True)
-    password = db.Column(db.Unicode(200), nullable=False)
-    name = db.Column(db.Unicode)
-    email = db.Column(db.Unicode(200), nullable=False)
-    role = db.Column(db.Unicode(200), nullable=False)
+    id: Mapped[bigint] = mapped_column(primary_key=True)
+    password: Mapped[unicode] = mapped_column(nullable=False)
+    name: Mapped[unicode] = mapped_column() # figure out how to make 200chars
+    email: Mapped[unicode] = mapped_column(nullable=False) # 200chars
+    role: Mapped[unicode] = mapped_column(nullable=False) #200chars
 
 class Outage(db.Model):
     lamp_id = db.Column(db.BigInteger, db.ForeignKey("lamp.id"), primary_key=True)
