@@ -1,7 +1,0 @@
----
-all:
-  children:
-    staging_server:
-      hosts:
-        134.209.117.174:
-          ansible_user: root
