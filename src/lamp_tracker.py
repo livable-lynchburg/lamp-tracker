@@ -11,13 +11,14 @@ DB_PATH = os.path.join(os.path.dirname(__file__), "lamp_tracker.db")
 IMPORTER_SCRIPT = os.path.join(os.path.dirname(__file__), "import_lamps.py")
 
 
-def build_lamp_html(lamps, outage_status, title="Lamp Tracker"):
+def build_lamp_html(lamps, outage_status, title="Lamp Tracker", show_javascript_button=False):
     """Build HTML for a list of lamps.
     
     Args:
         lamps: List of lamp tuples from database
         outage_status: Dict mapping lamp_id to status
         title: HTML title for the page
+        show_javascript_button: Whether to show JavaScript location button
     
     Returns:
         HTML string with all lamps listed
@@ -45,19 +46,20 @@ def build_lamp_html(lamps, outage_status, title="Lamp Tracker"):
                 lynchburg_id = lamp[11]
                 osm_object_id = lamp[12]
             else:
-                # Original format: (id, lat, lon, ...)
+                # Original format: (id, change_dtm, lat, lon, osm_object_id, verizon_pole_id, apco_pole_id, lynchburg_id, addr_housenumber, addr_street, addr_city, addr_state, addr_postcode)
                 lamp_id = lamp[0]
-                latitude = lamp[1]
-                longitude = lamp[2]
+                change_dtm = lamp[1]
+                latitude = lamp[2]
+                longitude = lamp[3]
+                osm_object_id = lamp[4]
+                verizon_pole_id = lamp[5]
+                apco_pole_id = lamp[6]
+                lynchburg_id = lamp[7]
                 addr_housenumber = lamp[8]
                 addr_street = lamp[9]
                 addr_city = lamp[10]
                 addr_state = lamp[11]
                 addr_postcode = lamp[12]
-                apco_pole_id = lamp[4]
-                verizon_pole_id = lamp[5]
-                lynchburg_id = lamp[6]
-                osm_object_id = lamp[4]
         
         # Build address
         address = []
@@ -95,8 +97,6 @@ def build_lamp_html(lamps, outage_status, title="Lamp Tracker"):
             ids_str.append(f"Verizon: {verizon_pole_id}")
         if lynchburg_id:
             ids_str.append(f"Lynchburg: {lynchburg_id}")
-        if not ids_str:
-            ids_str.append(f"AppCo: {osm_object_id.split('/')[-1] if '/' in osm_object_id else osm_object_id}")
         ids_html = ", ".join(ids_str) if ids_str else "N/A"
         
         # GPS coordinates as clickable link
@@ -118,6 +118,7 @@ def build_lamp_html(lamps, outage_status, title="Lamp Tracker"):
     <span style="margin-left: 15px; color: #666;">{ids_html}</span>
     <a href="/lamp/{lamp_id}" style="margin-left: 15px;">View details</a>
     {gps_link}
+    <a href="/nearby?lat={latitude}&lon={longitude}" target="_blank" style="margin-left: 15px; font-size: 0.8em; color: #0066cc;">Find nearby lamps</a>
 </li>"""
         
         html_parts.append(item_html)
@@ -206,83 +207,228 @@ def get_nearby_lamps():
     """Get lamps near a GPS location, sorted by distance, displayed as HTML."""
     try:
         query_string = request.query_string
+        
+        # Check if lat/lon are provided - if not, show JavaScript button
         if not query_string:
-            return "Error: Missing lat or lon query parameters\n"
-        params = parse_qs(query_string)
-        lat = float(params['lat'][0]) if params.get('lat') else None
-        lon = float(params['lon'][0]) if params.get('lon') else None
-        if lat is None or lon is None:
-            return "Error: Missing lat or lon query parameters\n"
-        
-        # Get all lamps with their coordinates
-        conn = sqlite3.connect(DB_PATH)
-        cursor = conn.cursor()
-        cursor.execute("""SELECT id, latitude, longitude, 
-                           addr_housenumber, addr_street, addr_city, addr_state, addr_postcode,
-                           apco_pole_id, verizon_pole_id, lynchburg_id, osm_object_id 
-                           FROM Lamps""")
-        lamps = cursor.fetchall()
-        
-        # Build outage status - lamp is broken if ANY outage is unfixed
-        outage_status = {}
-        # Group outages by lamp_id
-        lamps_with_outages = {}
-        cursor.execute("SELECT lamp_id, fixed_dtm FROM Outages")
-        outages = cursor.fetchall()
-        for outage in outages:
-            lamp_id = outage[0]
-            fixed_dtm = outage[1]
-            if lamp_id not in lamps_with_outages:
-                lamps_with_outages[lamp_id] = []
-            lamps_with_outages[lamp_id].append(outage)
-        
-        # For each lamp that has outages, determine status
-        for lamp_id, outages_for_lamp in lamps_with_outages.items():
-            # Check if all outages for this lamp are fixed
-            all_fixed = True
-            for o in outages_for_lamp:
-                if not o[1]:  # o[1] is fixed_dtm
-                    all_fixed = False
-                    break
-            if all_fixed:
-                outage_status[lamp_id] = "working"
-            else:
-                outage_status[lamp_id] = "broken"
-        conn.close()
-        
-        # Calculate distance for each lamp using simple cartesian distance
-        # Distance = sqrt((x1-x2)^2 + (y1-y2)^2)
-        # Using a simplified approach: (lat1-lat2)^2 + (lon1-lon2)^2
-        results = []
-        for lamp in lamps:
-            lamp_id = lamp[0]
-            lamp_lat = lamp[1]
-            lamp_lon = lamp[2]
-            addr_housenumber = lamp[3]
-            addr_street = lamp[4]
-            addr_city = lamp[5]
-            addr_state = lamp[6]
-            addr_postcode = lamp[7]
-            apco_pole_id = lamp[8]
-            verizon_pole_id = lamp[9]
-            lynchburg_id = lamp[10]
-            osm_object_id = lamp[11]
+            # No parameters provided, show JavaScript button
+            return """<h1>Lamps Near You</h1>
+<p>Enter your location below to find nearby lamps.</p>
+
+<script>
+(function() {
+    // Check if geolocation is supported by this browser
+    var geolocation_supported = 'geolocation' in navigator;
+    
+    if (geolocation_supported) {
+        // Show button to get user's location
+        document.getElementById('lamp-tracker-nearby-button').addEventListener('click', function() {
+            // Get user's location using JavaScript
+            navigator.geolocation.getCurrentPosition(function(position) {
+                var latitude = position.coords.latitude;
+                var longitude = position.coords.longitude;
+                
+                // Redirect to nearby route with coordinates attached
+                window.location.href = '/nearby?lat=' + latitude + '&lon=' + longitude;
+            }, function(error) {
+                // Handle errors (user denied permission, etc.)
+                var errorMsg = '';
+                switch(error.code) {
+                    case 1: // PERMISSION_DENIED
+                        errorMsg = 'Location permission denied.';
+                        break;
+                    case 2: // POSITION_UNAVAILABLE
+                        errorMsg = 'Location unavailable.';
+                        break;
+                    case 3: // TIMEOUT
+                        errorMsg = 'Location request timed out.';
+                        break;
+                    default:
+                        errorMsg = 'An unknown error occurred.';
+                }
+                alert(errorMsg);
+            }, {
+                enableHighAccuracy: true,
+                timeout: 10000,
+                maximumAge: 0
+            });
+        });
+    } else {
+        // Show button to manually enter coordinates
+        document.getElementById('lamp-tracker-nearby-button').addEventListener('click', function() {
+            var coords = prompt('Please enter your latitude and longitude, separated by a comma (e.g., 38.8977,-77.0365):');
+            if (coords) {
+                var parts = coords.split(',');
+                if (parts.length >= 2) {
+                    var lat = parseFloat(parts[0].trim());
+                    var lon = parseFloat(parts[1].trim());
+                    if (!isNaN(lat) && !isNaN(lon)) {
+                        window.location.href = '/nearby?lat=' + lat + '&lon=' + lon;
+                    } else {
+                        alert('Invalid coordinates. Please enter valid latitude and longitude.');
+                    }
+                } else {
+                    alert('Please enter two comma-separated values: latitude,longitude');
+                }
+            }
+        });
+    }
+})();
+</script>
+<button id="lamp-tracker-nearby-button" style="background-color: #0066cc; color: white; padding: 10px 20px; border: none; border-radius: 4px; text-decoration: none; cursor: pointer; font-size: 1em; margin: 20px 0; display: block; width: fit-content;">
+    Find lamps near me (JavaScript)
+</button>
+"""
+        else:
+            params = parse_qs(query_string)
+            lat = float(params['lat'][0]) if params.get('lat') else None
+            lon = float(params['lon'][0]) if params.get('lon') else None
+            if lat is None or lon is None:
+                return "Error: Missing lat or lon query parameters\n"
             
-            # Calculate squared distance (avoiding sqrt for performance)
-            # Use simple cartesian: (lat1 - lat2)^2 + (lon1 - lon2)^2
-            distance_sq = (lat - lamp_lat) ** 2 + (lon - lamp_lon) ** 2
+            # Get all lamps with their coordinates
+            conn = sqlite3.connect(DB_PATH)
+            cursor = conn.cursor()
+            cursor.execute("""SELECT id, latitude, longitude, 
+                               addr_housenumber, addr_street, addr_city, addr_state, addr_postcode,
+                               apco_pole_id, verizon_pole_id, lynchburg_id, osm_object_id 
+                               FROM Lamps""")
+            lamps = cursor.fetchall()
             
-            results.append((distance_sq, lamp_id, lamp_lat, lamp_lon, 
-                           addr_housenumber, addr_street, addr_city, addr_state, 
-                           addr_postcode, apco_pole_id, verizon_pole_id, 
-                           lynchburg_id, osm_object_id))
+            # Build outage status - lamp is broken if ANY outage is unfixed
+            outage_status = {}
+            # Group outages by lamp_id
+            lamps_with_outages = {}
+            cursor.execute("SELECT lamp_id, fixed_dtm FROM Outages")
+            outages = cursor.fetchall()
+            for outage in outages:
+                lamp_id = outage[0]
+                fixed_dtm = outage[1]
+                if lamp_id not in lamps_with_outages:
+                    lamps_with_outages[lamp_id] = []
+                lamps_with_outages[lamp_id].append(outage)
+            
+            # For each lamp that has outages, determine status
+            for lamp_id, outages_for_lamp in lamps_with_outages.items():
+                # Check if all outages for this lamp are fixed
+                all_fixed = True
+                for o in outages_for_lamp:
+                    if not o[1]:  # o[1] is fixed_dtm
+                        all_fixed = False
+                        break
+                if all_fixed:
+                    outage_status[lamp_id] = "working"
+                else:
+                    outage_status[lamp_id] = "broken"
+            conn.close()
+            
+            # Calculate distance for each lamp using simple cartesian distance
+            # Distance = sqrt((x1-x2)^2 + (y1-y2)^2)
+            # Using a simplified approach: (lat1-lat2)^2 + (lon1-lon2)^2
+            results = []
+            for lamp in lamps:
+                lamp_id = lamp[0]
+                lamp_lat = lamp[1]
+                lamp_lon = lamp[2]
+                addr_housenumber = lamp[3]
+                addr_street = lamp[4]
+                addr_city = lamp[5]
+                addr_state = lamp[6]
+                addr_postcode = lamp[7]
+                apco_pole_id = lamp[8]
+                verizon_pole_id = lamp[9]
+                lynchburg_id = lamp[10]
+                osm_object_id = lamp[11]
+                
+                # Calculate squared distance (avoiding sqrt for performance)
+                # Use simple cartesian: (lat1 - lat2)^2 + (lon1 - lon2)^2
+                distance_sq = (lat - lamp_lat) ** 2 + (lon - lamp_lon) ** 2
+                
+                results.append((distance_sq, lamp_id, lamp_lat, lamp_lon, 
+                               addr_housenumber, addr_street, addr_city, addr_state, 
+                               addr_postcode, apco_pole_id, verizon_pole_id, 
+                               lynchburg_id, osm_object_id))
+            
+            # Sort by distance (ascending) and take top 10
+            results.sort(key=lambda x: x[0])
+            nearby = results[:10]
+            
+            # Build HTML using shared function with JavaScript button
+            html = build_lamp_html(nearby, outage_status, title="Lamps Near You", show_javascript_button=False)
+            
+            # Add JavaScript button to get location and redirect to nearby route
+            show_javascript_button = True
+            js_button_html = """
+<script>
+(function() {
+    // Wait for DOM to be ready
+    document.addEventListener('DOMContentLoaded', function() {
+        // Check if geolocation is supported by this browser
+        var geolocation_supported = 'geolocation' in navigator;
         
-        # Sort by distance (ascending) and take top 10
-        results.sort(key=lambda x: x[0])
-        nearby = results[:10]
+        if (geolocation_supported) {
+            // Show button to get user's location
+            document.getElementById('lamp-tracker-nearby-button').addEventListener('click', function() {
+                // Get user's location using JavaScript
+                navigator.geolocation.getCurrentPosition(function(position) {
+                    var latitude = position.coords.latitude;
+                    var longitude = position.coords.longitude;
+                    
+                    // Redirect to nearby route with coordinates attached
+                    window.location.href = '/nearby?lat=' + latitude + '&lon=' + longitude;
+                }, function(error) {
+                    // Handle errors (user denied permission, etc.)
+                    var errorMsg = '';
+                    switch(error.code) {
+                        case 1: // PERMISSION_DENIED
+                            errorMsg = 'Location permission denied.';
+                            break;
+                        case 2: // POSITION_UNAVAILABLE
+                            errorMsg = 'Location unavailable.';
+                            break;
+                        case 3: // TIMEOUT
+                            errorMsg = 'Location request timed out.';
+                            break;
+                        default:
+                            errorMsg = 'An unknown error occurred.';
+                    }
+                    alert(errorMsg);
+                }, {
+                    enableHighAccuracy: true,
+                    timeout: 10000,
+                    maximumAge: 0
+                });
+            });
+        } else {
+            // Show button to manually enter coordinates
+            document.getElementById('lamp-tracker-nearby-button').addEventListener('click', function() {
+                var coords = prompt('Please enter your latitude and longitude, separated by a comma (e.g., 38.8977,-77.0365):');
+                if (coords) {
+                    var parts = coords.split(',');
+                    if (parts.length >= 2) {
+                        var lat = parseFloat(parts[0].trim());
+                        var lon = parseFloat(parts[1].trim());
+                        if (!isNaN(lat) && !isNaN(lon)) {
+                            window.location.href = '/nearby?lat=' + lat + '&lon=' + lon;
+                        } else {
+                            alert('Invalid coordinates. Please enter valid latitude and longitude.');
+                        }
+                    } else {
+                        alert('Please enter two comma-separated values: latitude,longitude');
+                    }
+                }
+            });
+        }
+    });
+})();
+</script>
+<button id="lamp-tracker-nearby-button" style="background-color: #0066cc; color: white; padding: 10px 20px; border: none; border-radius: 4px; text-decoration: none; cursor: pointer; font-size: 1em; margin: 20px 0; display: block; width: fit-content;">
+    Find lamps near me (JavaScript)
+</button>
+"""
         
-        # Build HTML using shared function
-        return build_lamp_html(nearby, outage_status, title="Lamps Near You")
+        html += js_button_html
+        
+        return html
     except Exception as e:
         return f"Error: {str(e)}"
 
@@ -335,8 +481,9 @@ def lamp_detail(lamp_id):
         if lynchburg_id:
             ids_str.append(f"Lynchburg: {lynchburg_id}")
         if not ids_str:
-            ids_str.append(f"AppCo: {osm_object_id.split('/')[-1] if '/' in osm_object_id else osm_object_id}")
-        ids_html = ", ".join(ids_str) if ids_str else "N/A"
+            ids_html = "N/A"
+        else:
+            ids_html = ", ".join(ids_str)
         
         # GPS coordinates as clickable link
         if latitude and longitude:
