@@ -216,62 +216,65 @@ def get_nearby_lamps():
 
 <script>
 (function() {
-    // Check if geolocation is supported by this browser
-    var geolocation_supported = 'geolocation' in navigator;
-    
-    if (geolocation_supported) {
-        // Show button to get user's location
-        document.getElementById('lamp-tracker-nearby-button').addEventListener('click', function() {
-            // Get user's location using JavaScript
-            navigator.geolocation.getCurrentPosition(function(position) {
-                var latitude = position.coords.latitude;
-                var longitude = position.coords.longitude;
-                
-                // Redirect to nearby route with coordinates attached
-                window.location.href = '/nearby?lat=' + latitude + '&lon=' + longitude;
-            }, function(error) {
-                // Handle errors (user denied permission, etc.)
-                var errorMsg = '';
-                switch(error.code) {
-                    case 1: // PERMISSION_DENIED
-                        errorMsg = 'Location permission denied.';
-                        break;
-                    case 2: // POSITION_UNAVAILABLE
-                        errorMsg = 'Location unavailable.';
-                        break;
-                    case 3: // TIMEOUT
-                        errorMsg = 'Location request timed out.';
-                        break;
-                    default:
-                        errorMsg = 'An unknown error occurred.';
-                }
-                alert(errorMsg);
-            }, {
-                enableHighAccuracy: true,
-                timeout: 10000,
-                maximumAge: 0
-            });
-        });
-    } else {
-        // Show button to manually enter coordinates
-        document.getElementById('lamp-tracker-nearby-button').addEventListener('click', function() {
-            var coords = prompt('Please enter your latitude and longitude, separated by a comma (e.g., 38.8977,-77.0365):');
-            if (coords) {
-                var parts = coords.split(',');
-                if (parts.length >= 2) {
-                    var lat = parseFloat(parts[0].trim());
-                    var lon = parseFloat(parts[1].trim());
-                    if (!isNaN(lat) && !isNaN(lon)) {
-                        window.location.href = '/nearby?lat=' + lat + '&lon=' + lon;
-                    } else {
-                        alert('Invalid coordinates. Please enter valid latitude and longitude.');
+    // Wait for DOM to be ready before attaching event listener
+    document.addEventListener('DOMContentLoaded', function() {
+        // Check if geolocation is supported by this browser
+        var geolocation_supported = 'geolocation' in navigator;
+        
+        if (geolocation_supported) {
+            // Show button to get user's location
+            document.getElementById('lamp-tracker-nearby-button').addEventListener('click', function() {
+                // Get user's location using JavaScript
+                navigator.geolocation.getCurrentPosition(function(position) {
+                    var latitude = position.coords.latitude;
+                    var longitude = position.coords.longitude;
+                    
+                    // Redirect to nearby route with coordinates attached
+                    window.location.href = '/nearby?lat=' + latitude + '&lon=' + longitude;
+                }, function(error) {
+                    // Handle errors (user denied permission, etc.)
+                    var errorMsg = '';
+                    switch(error.code) {
+                        case 1: // PERMISSION_DENIED
+                            errorMsg = 'Location permission denied.';
+                            break;
+                        case 2: // POSITION_UNAVAILABLE
+                            errorMsg = 'Location unavailable.';
+                            break;
+                        case 3: // TIMEOUT
+                            errorMsg = 'Location request timed out.';
+                            break;
+                        default:
+                            errorMsg = 'An unknown error occurred.';
                     }
-                } else {
-                    alert('Please enter two comma-separated values: latitude,longitude');
+                    alert(errorMsg);
+                }, {
+                    enableHighAccuracy: true,
+                    timeout: 10000,
+                    maximumAge: 0
+                });
+            });
+        } else {
+            // Show button to manually enter coordinates
+            document.getElementById('lamp-tracker-nearby-button').addEventListener('click', function() {
+                var coords = prompt('Please enter your latitude and longitude, separated by a comma (e.g., 38.8977,-77.0365):');
+                if (coords) {
+                    var parts = coords.split(',');
+                    if (parts.length >= 2) {
+                        var lat = parseFloat(parts[0].trim());
+                        var lon = parseFloat(parts[1].trim());
+                        if (!isNaN(lat) && !isNaN(lon)) {
+                            window.location.href = '/nearby?lat=' + lat + '&lon=' + lon;
+                        } else {
+                            alert('Invalid coordinates. Please enter valid latitude and longitude.');
+                        }
+                    } else {
+                        alert('Please enter two comma-separated values: latitude,longitude');
+                    }
                 }
-            }
-        });
-    }
+            });
+        }
+    });
 })();
 </script>
 <button id="lamp-tracker-nearby-button" style="background-color: #0066cc; color: white; padding: 10px 20px; border: none; border-radius: 4px; text-decoration: none; cursor: pointer; font-size: 1em; margin: 20px 0; display: block; width: fit-content;">
